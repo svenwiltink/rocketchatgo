@@ -79,7 +79,7 @@ func (s *Session) startEventListener() {
 
 	for message := range channel {
 		room := s.state.GetChannelById(message.ChannelID)
-		fmt.Printf("%s: %s - %s", room.Name, message.Sender.Username, message.Message)
+		fmt.Printf("%s: %s:%s - %s", room.Name, message.Sender.Username, message.Sender.Name, message.Message)
 	}
 }
 
