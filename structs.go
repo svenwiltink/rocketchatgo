@@ -46,14 +46,14 @@ type User struct {
 
 type Message struct {
 	ID           string   `json:"_id"`
-	Type         string   `json:"t"`
-	CreationDate JsonDate `json:"ts"`
+	Type         string   `json:"t,omitempty"`
+	CreationDate JsonDate `json:"ts,omitempty"`
 	Message      string   `json:"msg"`
-	Url          []string `json:"url"`
-	ExpireAt     JsonDate `json:"url"`
-	Mentions     []string `json:"mentions"`
-	Sender       *User    `json:"u"`
-	ChannelID    string   `json:"rid"`
+	Url          []string `json:"url,omitempty"`
+	ExpireAt     JsonDate `json:"url,omitempty"`
+	Mentions     []string `json:"mentions,omitempty"`
+	Sender       *User    `json:"u,omitempty"`
+	ChannelID    string   `json:"rid,omitempty"`
 }
 
 type JsonDate struct {

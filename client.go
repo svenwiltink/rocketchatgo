@@ -50,6 +50,18 @@ func (s *Session) Login(username string, email string, password string) error {
 	return nil
 }
 
+func (s *Session) SendMessage(channelId string, message string) error {
+	_, err := s.ddp.Call("sendMessage", struct {
+		Message   string `json:"msg"`
+		ChannelID string `json:"rid"`
+	}{
+		Message:   message,
+		ChannelID: channelId,
+	})
+
+	return err
+}
+
 func (s *Session) GetChannels() ([]*Room, error) {
 	result, err := s.ddp.Call("rooms/get")
 	if err != nil {
@@ -78,8 +90,9 @@ func (s *Session) startEventListener() {
 	s.ddp.CollectionByName("stream-room-messages").AddUpdateListener(&messageExtractor{"update", channel})
 
 	for message := range channel {
-		room := s.state.GetChannelById(message.ChannelID)
-		fmt.Printf("%s: %s:%s - %s", room.Name, message.Sender.Username, message.Sender.Name, message.Message)
+		if s.state.UserID != message.Sender.ID {
+			s.SendMessage(message.ChannelID, message.Message)
+		}
 	}
 }
 
