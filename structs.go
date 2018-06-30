@@ -27,7 +27,7 @@ type ddpLoginResponse struct {
 
 type Room struct {
 	ID           string   `json:"_id"`
-	Type         string   `json:"t"`
+	Type         RoomType `json:"t"`
 	CreationDate JsonDate `json:"ts"`
 	Name         string   `json:"name"`
 	LastMessage  JsonDate `json:"lm"`
@@ -37,6 +37,13 @@ type Room struct {
 	Usernames    []string `json:"usernames"`
 	Owner        *User    `json:"u"`
 }
+
+type RoomType string
+
+const (
+	RoomTypeChannel RoomType = "c"
+	RoomTypeDirect  RoomType = "d"
+)
 
 type User struct {
 	ID       string `json:"_id"`

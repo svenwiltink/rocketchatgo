@@ -41,12 +41,7 @@ func (s *Session) Login(username string, email string, password string) error {
 	}
 
 	s.state.UserID = loginResultStruct.ID
-	channels, err := s.GetChannels()
-	if err != nil {
-		return err
-	}
-
-	s.state.AddRooms(channels...)
+	s.updateChannels()
 	s.startEventListener()
 	return nil
 }
@@ -73,10 +68,28 @@ func (s *Session) GetChannels() ([]*Room, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	channelArray := make([]*Room, 0)
 	err = json.Unmarshal(jsonArray, &channelArray)
 
 	return channelArray, err
+}
+
+func (s *Session) GetChannelByName(name string) *Room {
+	room := s.state.GetChannelByName(name)
+
+	if room != nil {
+		return room
+	}
+
+	s.updateChannels()
+
+	return s.state.GetChannelByName(name)
+}
+
+func (s *Session) updateChannels() {
+	channels, _ :=  s.GetChannels()
+	s.state.SetRooms(channels...)
 }
 
 func (s *Session) startEventListener() {

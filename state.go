@@ -27,6 +27,17 @@ func (s *State) AddRooms(rooms ...*Room) {
 	}
 }
 
+func (s *State) SetRooms(rooms ...*Room) {
+	s.channelMutex.Lock()
+	defer s.channelMutex.Unlock()
+
+	s.channelMap = make(map[string]*Room)
+
+	for _, room := range rooms {
+		s.channelMap[room.ID] = room
+	}
+}
+
 func (s *State) AddRoom(room *Room) {
 	s.channelMutex.Lock()
 	defer s.channelMutex.Unlock()
