@@ -13,7 +13,7 @@ type Session struct {
 	ddp   *ddpgo.Client
 	state *State
 
-	messageChan chan *Message
+	MessageChan chan *Message
 }
 
 func (s *Session) Close() {
@@ -100,9 +100,9 @@ func (s *Session) startEventListener() {
 		}
 	}
 
-	s.ddp.GetCollectionByName("stream-room-messages").AddChangedEventHandler(s.OnRoomMessage)
+	s.ddp.GetCollectionByName("stream-room-messages").AddChangedEventHandler(s.onRoomMessage)
 
-	for message := range s.messageChan {
+	for message := range s.MessageChan {
 		if message.Sender.ID == s.state.UserID {
 			continue
 		}
@@ -111,7 +111,7 @@ func (s *Session) startEventListener() {
 	}
 }
 
-func (s Session) OnRoomMessage(event ddpgo.CollectionChangedEvent) {
+func (s Session) onRoomMessage(event ddpgo.CollectionChangedEvent) {
 	jsonBytes, err := json.Marshal(event.Fields.Args)
 	if err != nil {
 		log.Println(err)
@@ -127,7 +127,7 @@ func (s Session) OnRoomMessage(event ddpgo.CollectionChangedEvent) {
 	}
 
 	for _, message := range messageList {
-		s.messageChan <- message
+		s.MessageChan <- message
 	}
 }
 
@@ -141,6 +141,6 @@ func NewClient(host string) (*Session, error) {
 
 	return &Session{
 		ddp:         ddpClient,
-		messageChan: make(chan *Message, 100),
+		MessageChan: make(chan *Message, 100),
 	}, nil
 }
