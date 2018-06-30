@@ -4,19 +4,20 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
-	"github.com/gopackage/ddp"
-	"math/rand"
-	"time"
+	"github.com/svenwiltink/ddpgo"
+	"net/url"
+	"log"
 )
 
 type Session struct {
-	ddp   *ddp.Client
+	ddp   *ddpgo.Client
 	state *State
+
+	messageChan chan *Message
 }
 
 func (s *Session) Close() {
-	s.ddp.Close()
+	//s.ddp.Close()
 }
 
 func (s *Session) Login(username string, email string, password string) error {
@@ -24,7 +25,7 @@ func (s *Session) Login(username string, email string, password string) error {
 	s.state = NewState()
 	digest := sha256.Sum256([]byte(password))
 
-	loginResult, err := s.ddp.Call("login", ddpLoginRequest{
+	loginResult, err := s.ddp.CallMethod("login", ddpLoginRequest{
 		User:     ddpUser{Email: email, Username: username},
 		Password: ddpPassword{Digest: hex.EncodeToString(digest[:]), Algorithm: "sha-256"}})
 
@@ -51,7 +52,7 @@ func (s *Session) Login(username string, email string, password string) error {
 }
 
 func (s *Session) GetChannels() ([]*Room, error) {
-	result, err := s.ddp.Call("rooms/get")
+	result, err := s.ddp.CallMethod("rooms/get")
 	if err != nil {
 		return nil, err
 	}
@@ -68,63 +69,65 @@ func (s *Session) GetChannels() ([]*Room, error) {
 
 func (s *Session) startEventListener() {
 	for _, room := range s.state.channelMap {
-		err := s.ddp.Sub("stream-room-messages", room.ID, true)
+		_, err := s.ddp.Subscribe("stream-room-messages", room.ID, true)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	channel := make(chan *Message, 100)
-	s.ddp.CollectionByName("stream-room-messages").AddUpdateListener(&messageExtractor{"update", channel})
+	s.ddp.GetCollectionByName("stream-room-messages").AddChangedEventHandler(s.OnRoomMessage)
 
-	for message := range channel {
-		room := s.state.GetChannelById(message.ChannelID)
-		fmt.Printf("%s: %s:%s - %s", room.Name, message.Sender.Username, message.Sender.Name, message.Message)
+	for message := range s.messageChan {
+		if message.Sender.ID == s.state.UserID {
+			continue
+		}
+
+		s.SendMessage(message.ChannelID, message.Message)
 	}
 }
 
-func NewClient(host string, port int, tls bool) (*Session, error) {
+func (s Session) SendMessage(channelID string, message string) error {
+	_, err := s.ddp.CallMethod("sendMessage", struct {
+		Message   string `json:"msg"`
+		ChannelID string `json:"rid"`
+	}{
+		Message:   message,
+		ChannelID: channelID,
+	})
 
-	rand.Seed(time.Now().UTC().UnixNano())
-	protocol := "ws"
-	if tls {
-		protocol = "wss"
+	return err
+}
+
+func (s Session) OnRoomMessage(event ddpgo.CollectionChangedEvent) {
+	jsonBytes, err := json.Marshal(event.Fields.Args)
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
-	hostString := fmt.Sprintf("%s://%s:%d/websocket", protocol, host, port)
-	ddpClient := ddp.NewClient(hostString, "http://"+host)
-	ddpClient.SetSocketLogActive(true)
+	log.Println(string(jsonBytes))
+	messageList := make([]*Message, 0)
+	err = json.Unmarshal(jsonBytes, &messageList)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	for _, message := range messageList {
+		s.messageChan <- message
+	}
+}
+
+func NewClient(host string) (*Session, error) {
+
+	ddpClient := ddpgo.NewClient(url.URL{Host: host})
 
 	if err := ddpClient.Connect(); err != nil {
 		return nil, err
 	}
 
 	return &Session{
-		ddp: ddpClient,
+		ddp:         ddpClient,
+		messageChan: make(chan *Message, 100),
 	}, nil
-}
-
-type messageExtractor struct {
-	operation string
-	channel   chan *Message
-}
-
-func (u messageExtractor) CollectionUpdate(collection, operation, id string, doc ddp.Update) {
-	if u.operation == operation {
-		jsonBytes, err := json.Marshal(doc["args"].([]interface{})[0])
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		fmt.Println(string(jsonBytes))
-		message := &Message{}
-		err = json.Unmarshal(jsonBytes, message)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		u.channel <- message
-	}
 }

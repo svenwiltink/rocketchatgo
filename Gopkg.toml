@@ -31,4 +31,4 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/gopackage/ddp"
+  name = "github.com/svenwiltink/ddpgo"
