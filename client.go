@@ -7,6 +7,8 @@ import (
 	"github.com/svenwiltink/ddpgo"
 	"net/url"
 	"log"
+	"sync"
+	"strings"
 )
 
 type Session struct {
@@ -14,10 +16,33 @@ type Session struct {
 	state *State
 
 	MessageChan chan *Message
+
+	eventHandlers     map[string][]EventHandler
+	eventHandlerMutex sync.RWMutex
 }
 
 func (s *Session) Close() {
 	//s.ddp.Close()
+}
+
+func (s *Session) AddHandler(i interface{}) error {
+	handler, err := getHandlerFromInterface(i)
+	if err != nil {
+		return err
+	}
+
+	s.eventHandlerMutex.Lock()
+	defer s.eventHandlerMutex.Unlock()
+	handlerType := handler.Type()
+
+	slice, exists := s.eventHandlers[handlerType]
+
+	if !exists {
+		slice = make([]EventHandler, 0)
+	}
+
+	s.eventHandlers[handlerType] = append(slice, handler)
+	return nil
 }
 
 func (s *Session) Login(username string, email string, password string) error {
@@ -88,7 +113,7 @@ func (s *Session) GetChannelByName(name string) *Room {
 }
 
 func (s *Session) updateChannels() {
-	channels, _ :=  s.GetChannels()
+	channels, _ := s.GetChannels()
 	s.state.SetRooms(channels...)
 }
 
@@ -100,25 +125,80 @@ func (s *Session) startEventListener() {
 		}
 	}
 
+	s.ddp.Subscribe("stream-notify-user", s.state.UserID+"/rooms-changed", true)
+
+	s.ddp.GetCollectionByName("stream-notify-user").AddChangedEventHandler(s.onUserChange)
 	s.ddp.GetCollectionByName("stream-room-messages").AddChangedEventHandler(s.onRoomMessage)
+}
 
-	for message := range s.MessageChan {
-		if message.Sender.ID == s.state.UserID {
-			continue
-		}
+// pass the event to all eventhandlers
+func (s *Session) handleEvent(event Event) {
+	eventType := event.GetType()
+	s.eventHandlerMutex.RLock()
+	defer s.eventHandlerMutex.RUnlock()
 
-		s.SendMessage(message.ChannelID, message.Message)
+	handlers, exists := s.eventHandlers[eventType]
+	if !exists {
+		return
+	}
+
+	for _, handler := range handlers {
+		handler.Handle(s, event)
 	}
 }
 
-func (s Session) onRoomMessage(event ddpgo.CollectionChangedEvent) {
+func (s *Session) onUserChange(event ddpgo.CollectionChangedEvent) {
+	eventType := strings.Split(event.Fields.EventName, "/")[1]
+	switch eventType {
+	case "rooms-changed":
+		{
+			channel := &Room{}
+			jsonBytes, err := json.Marshal(event.Fields.Args[1])
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			err = json.Unmarshal(jsonBytes, channel)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			channelEvent := event.Fields.Args[0].(string)
+
+			switch channelEvent {
+			case "inserted":
+				{
+					event := &ChannelJoinEvent{
+						Channel: channel,
+					}
+
+					s.state.AddRoom(channel)
+					s.handleEvent(event)
+
+				}
+			case "removed":
+				{
+					event := &ChannelLeaveEvent{
+						Channel: channel,
+					}
+
+					s.state.RemoveRoom(channel)
+					s.handleEvent(event)
+				}
+			}
+		}
+	}
+}
+
+func (s *Session) onRoomMessage(event ddpgo.CollectionChangedEvent) {
 	jsonBytes, err := json.Marshal(event.Fields.Args)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	log.Println(string(jsonBytes))
 	messageList := make([]*Message, 0)
 	err = json.Unmarshal(jsonBytes, &messageList)
 	if err != nil {
@@ -127,8 +207,14 @@ func (s Session) onRoomMessage(event ddpgo.CollectionChangedEvent) {
 	}
 
 	for _, message := range messageList {
-		s.MessageChan <- message
+		log.Println(message)
+		event := MessageCreateEvent{Message: message}
+		s.handleEvent(&event)
 	}
+}
+
+func (s *Session) GetUserID() string {
+	return s.state.UserID
 }
 
 func NewClient(host string) (*Session, error) {
@@ -140,7 +226,8 @@ func NewClient(host string) (*Session, error) {
 	}
 
 	return &Session{
-		ddp:         ddpClient,
-		MessageChan: make(chan *Message, 100),
+		ddp:           ddpClient,
+		MessageChan:   make(chan *Message, 100),
+		eventHandlers: make(map[string][]EventHandler),
 	}, nil
 }

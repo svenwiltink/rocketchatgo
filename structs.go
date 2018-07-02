@@ -2,8 +2,7 @@ package rocketchatgo
 
 import (
 	"strconv"
-	"strings"
-	"time"
+		"time"
 )
 
 type ddpLoginRequest struct {
@@ -74,12 +73,13 @@ func (t jsonTime) MarshalJSON() ([]byte, error) {
 }
 
 func (t *jsonTime) UnmarshalJSON(s []byte) (err error) {
-	r := strings.Replace(string(s), `"`, ``, -1)
+	r := string(s)
 
 	q, err := strconv.ParseInt(r, 10, 64)
 	if err != nil {
 		return err
 	}
+
 	*(*time.Time)(t) = time.Unix(0, q*int64(time.Millisecond)).UTC()
 	return
 }

@@ -45,6 +45,13 @@ func (s *State) AddRoom(room *Room) {
 	s.channelMap[room.ID] = room
 }
 
+func (s *State) RemoveRoom(room *Room) {
+	s.channelMutex.Lock()
+	defer s.channelMutex.Unlock()
+
+	delete(s.channelMap, room.ID)
+}
+
 func (s *State) GetChannelById(channelId string) *Room {
 	s.channelMutex.RLock()
 	defer s.channelMutex.RUnlock()
