@@ -9,14 +9,15 @@ import (
 )
 
 func main() {
-	client, err := rocketchatgo.NewClient("***")
+
+	client, err := rocketchatgo.NewClient("-", true)
 
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	err = client.Login("***", "", "***")
+	err = client.Login("-", "", "-")
 	if err != nil {
 		fmt.Println(err)
 	}

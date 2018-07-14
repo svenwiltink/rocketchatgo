@@ -15,8 +15,6 @@ type Session struct {
 	ddp   *ddpgo.Client
 	state *State
 
-	MessageChan chan *Message
-
 	eventHandlers     map[string][]EventHandler
 	eventHandlerMutex sync.RWMutex
 }
@@ -110,6 +108,18 @@ func (s *Session) GetChannelByName(name string) *Room {
 	s.updateChannels()
 
 	return s.state.GetChannelByName(name)
+}
+
+func (s *Session) GetChannelById(channelId string) *Room {
+	room := s.state.GetChannelById(channelId)
+
+	if room != nil {
+		return room
+	}
+
+	s.updateChannels()
+
+	return s.state.GetChannelById(channelId)
 }
 
 func (s *Session) updateChannels() {
@@ -217,9 +227,14 @@ func (s *Session) GetUserID() string {
 	return s.state.UserID
 }
 
-func NewClient(host string) (*Session, error) {
+func NewClient(host string, ssl bool) (*Session, error) {
 
-	ddpClient := ddpgo.NewClient(url.URL{Host: host})
+	scheme := "wss"
+	if !ssl {
+		scheme = "ws"
+	}
+
+	ddpClient := ddpgo.NewClient(url.URL{Host: host, Scheme: scheme})
 
 	if err := ddpClient.Connect(); err != nil {
 		return nil, err
@@ -227,7 +242,6 @@ func NewClient(host string) (*Session, error) {
 
 	return &Session{
 		ddp:           ddpClient,
-		MessageChan:   make(chan *Message, 100),
 		eventHandlers: make(map[string][]EventHandler),
 	}, nil
 }

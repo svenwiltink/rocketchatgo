@@ -11,7 +11,7 @@
   branch = "master"
   name = "github.com/svenwiltink/ddpgo"
   packages = ["."]
-  revision = "53abb39717f7155ddb2a7f82ca6f1bc86e462cb2"
+  revision = "6756e3cd59e06e47caf1d0f257f03a50745b3b97"
 
 [solve-meta]
   analyzer-name = "dep"
