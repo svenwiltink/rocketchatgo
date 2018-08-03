@@ -2,7 +2,7 @@ package rocketchatgo
 
 import (
 	"strconv"
-		"time"
+	"time"
 )
 
 type ddpLoginRequest struct {
@@ -45,9 +45,9 @@ const (
 )
 
 type User struct {
-	ID       string `json:"_id"`
-	Username string `json:"username"`
-	Name     string `json:"name"`
+	ID           string `json:"_id"`
+	Username     string `json:"username"`
+	Name         string `json:"name"`
 	Token        string `json:"token,omitempty"`
 	TokenExpires int64  `json:"tokenExpires,omitempty"`
 }

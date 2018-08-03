@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/svenwiltink/rocketchatgo"
+	"log"
 	"os"
 	"os/signal"
-	"log"
 )
 
 func main() {
@@ -33,7 +33,7 @@ func main() {
 }
 
 func OnMessageCreate(session *rocketchatgo.Session, event *rocketchatgo.MessageCreateEvent) {
-	if session.GetUserID() == event.Message.Sender.ID{
+	if session.GetUserID() == event.Message.Sender.ID {
 		return
 	}
 

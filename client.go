@@ -5,10 +5,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"github.com/svenwiltink/ddpgo"
-	"net/url"
 	"log"
-	"sync"
+	"net/url"
 	"strings"
+	"sync"
 )
 
 type Session struct {
@@ -29,7 +29,7 @@ func (s *Session) NotifyRoom(roomID string, params ...interface{}) (err error) {
 }
 
 func (s *Session) isTyping(roomID, username string, flag bool) (err error) {
-	err = s.NotifyRoom(roomID + "/typing", username, flag)
+	err = s.NotifyRoom(roomID+"/typing", username, flag)
 	return
 }
 
@@ -80,7 +80,7 @@ func (s *Session) Login(username string, email string, password string) error {
 }
 
 func (s *Session) SendMessage(channelId string, message string) error {
-	err := s.SendCustomMessage(Message {
+	err := s.SendCustomMessage(Message{
 		Message:   message,
 		ChannelID: channelId,
 	})
