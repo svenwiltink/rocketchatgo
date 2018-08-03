@@ -59,7 +59,7 @@ func (s *Session) Login(username string, email string, password string) error {
 	digest := sha256.Sum256([]byte(password))
 
 	loginResult, err := s.ddp.CallMethod("login", ddpLoginRequest{
-		User:     ddpUser{Email: email},
+		User:     ddpUser{Email: email, Username: username},
 		Password: ddpPassword{Digest: hex.EncodeToString(digest[:]), Algorithm: "sha-256"}})
 
 	jsonString, err := json.Marshal(loginResult)
