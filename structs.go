@@ -48,18 +48,47 @@ type User struct {
 	ID       string `json:"_id"`
 	Username string `json:"username"`
 	Name     string `json:"name"`
+	Token        string `json:"token,omitempty"`
+	TokenExpires int64  `json:"tokenExpires,omitempty"`
 }
 
 type Message struct {
-	ID           string   `json:"_id"`
-	Type         string   `json:"t,omitempty"`
-	CreationDate JsonDate `json:"ts,omitempty"`
-	Message      string   `json:"msg"`
-	Url          []string `json:"url,omitempty"`
-	ExpireAt     JsonDate `json:"url,omitempty"`
-	Mentions     []string `json:"mentions,omitempty"`
-	Sender       *User    `json:"u,omitempty"`
-	ChannelID    string   `json:"rid,omitempty"`
+	ChannelID string `json:"rid"`
+	Message   string `json:"msg"`
+
+	// Optional fields, or for receiver only
+	ID          string       `json:"_id,omitempty"`
+	Timestamp   string       `json:"ts,omitempty"`
+	Sender      User         `json:"u,omitempty"`
+	Alias       string       `json:"alias,omitempty"`
+	Avatar      string       `json:"avatar,omitempty"`
+	Attachments []Attachment `json:"attachments,omitempty"`
+	Emoji       string       `json:"emoji,omitempty"`
+}
+
+type Attachment struct {
+	Color         string            `json:"color,omitempty"`
+	Text          string            `json:"text,omitempty"`
+	Timestamp     string            `json:"ts,omitempty"`
+	ThumbnailURL  string            `json:"thumb_url,omitempty"`
+	MessageURL    string            `json:"message_link,omitempty"`
+	Collapsed     bool              `json:"collapsed,omitempty"`
+	AuthorName    string            `json:"author_name,omitempty"`
+	AuthorURL     string            `json:"author_link,omitempty"`
+	AuthorIcon    string            `json:"author_icon,omitempty"`
+	Title         string            `json:"title,omitempty"`
+	TitleURL      string            `json:"title_link,omitempty"`
+	TitleDownload bool              `json:"title_link_download,omitempty"`
+	ImageURL      string            `json:"image_url,omitempty"`
+	AudioURL      string            `json:"audio_url,omitempty"`
+	VideoURL      string            `json:"video_url,omitempty"`
+	Fields        []AttachmentField `json:"fields,omitempty"`
+}
+
+type AttachmentField struct {
+	Short bool   `json:"short,omitempty"`
+	Title string `json:"title"`
+	Value string `json:"value"`
 }
 
 type JsonDate struct {

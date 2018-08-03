@@ -9,8 +9,6 @@ import (
 	"log"
 	"sync"
 	"strings"
-
-	"github.com/Egari/rocketchatgo/models"
 )
 
 type Session struct {
@@ -82,15 +80,15 @@ func (s *Session) Login(username string, email string, password string) error {
 }
 
 func (s *Session) SendMessage(channelId string, message string) error {
-	err := s.SendCustomMessage(models.Message {
-		Text:      message,
-		ChannelId: channelId,
+	err := s.SendCustomMessage(Message {
+		Message:   message,
+		ChannelID: channelId,
 	})
 
 	return err
 }
 
-func (s *Session) SendCustomMessage(message models.Message) error {
+func (s *Session) SendCustomMessage(message Message) error {
 	_, err := s.ddp.CallMethod("sendMessage", message)
 	return err
 }
