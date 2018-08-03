@@ -58,7 +58,7 @@ type Message struct {
 
 	// Optional fields, or for receiver only
 	ID          string       `json:"_id,omitempty"`
-	Timestamp   string       `json:"ts,omitempty"`
+	Timestamp   JsonDate     `json:"ts,omitempty"`
 	Sender      User         `json:"u,omitempty"`
 	Alias       string       `json:"alias,omitempty"`
 	Avatar      string       `json:"avatar,omitempty"`
