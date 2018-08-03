@@ -9,6 +9,8 @@ import (
 	"log"
 	"sync"
 	"strings"
+
+	"github.com/Egari/rocketchatgo/models"
 )
 
 type Session struct {
@@ -21,6 +23,16 @@ type Session struct {
 
 func (s *Session) Close() {
 	//s.ddp.Close()
+}
+
+func (s *Session) NotifyRoom(roomID string, params ...interface{}) (err error) {
+	_, err = s.ddp.CallMethod("stream-notify-room", params...)
+	return
+}
+
+func (s *Session) isTyping(roomID, username string, flag bool) (err error) {
+	err = s.NotifyRoom(roomID + "/typing", username, flag)
+	return
 }
 
 func (s *Session) AddHandler(i interface{}) error {
@@ -49,7 +61,7 @@ func (s *Session) Login(username string, email string, password string) error {
 	digest := sha256.Sum256([]byte(password))
 
 	loginResult, err := s.ddp.CallMethod("login", ddpLoginRequest{
-		User:     ddpUser{Email: email, Username: username},
+		User:     ddpUser{Email: email},
 		Password: ddpPassword{Digest: hex.EncodeToString(digest[:]), Algorithm: "sha-256"}})
 
 	jsonString, err := json.Marshal(loginResult)
@@ -70,24 +82,28 @@ func (s *Session) Login(username string, email string, password string) error {
 }
 
 func (s *Session) SendMessage(channelId string, message string) error {
-	_, err := s.ddp.CallMethod("sendMessage", struct {
-		Message   string `json:"msg"`
-		ChannelID string `json:"rid"`
-	}{
-		Message:   message,
-		ChannelID: channelId,
+	err := s.SendCustomMessage(models.Message {
+		Text:      message,
+		ChannelId: channelId,
 	})
 
 	return err
 }
 
+func (s *Session) SendCustomMessage(message models.Message) error {
+	_, err := s.ddp.CallMethod("sendMessage", message)
+	return err
+}
+
 func (s *Session) GetChannels() ([]*Room, error) {
-	result, err := s.ddp.CallMethod("rooms/get")
+	result, err := s.ddp.CallMethod("rooms/get", map[string]int{
+		"$date": 0,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	jsonArray, err := json.Marshal(result)
+	jsonArray, err := json.Marshal(result.(map[string]interface{})["update"])
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +143,15 @@ func (s *Session) updateChannels() {
 	s.state.SetRooms(channels...)
 }
 
+func (s *Session) SetChannels(channels []*Room) {
+	s.state.SetRooms(channels...)
+}
+
 func (s *Session) startEventListener() {
+	if len(s.state.channelMap) == 0 {
+		panic("THIS WILL SEGFAULT, MAKE SURE THE BOT IS IN SOME CHANNELS!")
+	}
+
 	for _, room := range s.state.channelMap {
 		_, err := s.ddp.Subscribe("stream-room-messages", room.ID, true)
 		if err != nil {
