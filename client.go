@@ -5,10 +5,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"github.com/svenwiltink/ddpgo"
-	"net/url"
 	"log"
-	"sync"
+	"net/url"
 	"strings"
+	"sync"
 )
 
 type Session struct {
@@ -20,7 +20,7 @@ type Session struct {
 }
 
 func (s *Session) Close() {
-	//s.ddp.Close()
+	s.ddp.Close()
 }
 
 func (s *Session) AddHandler(i interface{}) error {
@@ -48,9 +48,9 @@ func (s *Session) Login(username string, email string, password string) error {
 	s.state = NewState()
 	digest := sha256.Sum256([]byte(password))
 
-	loginResult, err := s.ddp.CallMethod("login", ddpLoginRequest{
-		User:     ddpUser{Email: email, Username: username},
-		Password: ddpPassword{Digest: hex.EncodeToString(digest[:]), Algorithm: "sha-256"}})
+	loginResult, err := s.ddp.Login(ddpgo.Credentials{
+		User:     ddpgo.User{Email: email, Username: username},
+		Password: ddpgo.Password{Digest: hex.EncodeToString(digest[:]), Algorithm: "sha-256"}})
 
 	jsonString, err := json.Marshal(loginResult)
 	if err != nil {

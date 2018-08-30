@@ -30,5 +30,5 @@
   unused-packages = true
 
 [[constraint]]
-  branch = "master"
+  branch = "experimental"
   name = "github.com/svenwiltink/ddpgo"

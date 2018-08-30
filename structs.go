@@ -2,23 +2,8 @@ package rocketchatgo
 
 import (
 	"strconv"
-		"time"
+	"time"
 )
-
-type ddpLoginRequest struct {
-	User     ddpUser     `json:"user"`
-	Password ddpPassword `json:"password"`
-}
-
-type ddpUser struct {
-	Email    string `json:"email,omitempty"`
-	Username string `json:"username,omitempty"`
-}
-
-type ddpPassword struct {
-	Digest    string `json:"digest"`
-	Algorithm string `json:"algorithm"`
-}
 
 type ddpLoginResponse struct {
 	ID string `json:"id"`
@@ -57,7 +42,7 @@ type Message struct {
 	Message      string   `json:"msg"`
 	Url          []string `json:"url,omitempty"`
 	ExpireAt     JsonDate `json:"url,omitempty"`
-	Mentions     []string `json:"mentions,omitempty"`
+	Mentions     []*User  `json:"mentions,omitempty"`
 	Sender       *User    `json:"u,omitempty"`
 	ChannelID    string   `json:"rid,omitempty"`
 }
