@@ -52,6 +52,10 @@ func (s *Session) Login(username string, email string, password string) error {
 		User:     ddpgo.User{Email: email, Username: username},
 		Password: ddpgo.Password{Digest: hex.EncodeToString(digest[:]), Algorithm: "sha-256"}})
 
+	if err != nil {
+		return err
+	}
+
 	jsonString, err := json.Marshal(loginResult)
 	if err != nil {
 		return err
