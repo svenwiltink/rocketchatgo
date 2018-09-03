@@ -23,12 +23,14 @@ func (s *Session) Close() {
 	//s.ddp.Close()
 }
 
+// NotifyRoom notifies the room of a given event
 func (s *Session) NotifyRoom(roomID string, params ...interface{}) (err error) {
 	_, err = s.ddp.CallMethod("stream-notify-room", params...)
 	return
 }
 
-func (s *Session) isTyping(roomID, username string, flag bool) (err error) {
+// IsTyping enables/disables the '... is typing' event for the given room and user
+func (s *Session) IsTyping(roomID, username string, flag bool) (err error) {
 	err = s.NotifyRoom(roomID+"/typing", username, flag)
 	return
 }
@@ -58,9 +60,20 @@ func (s *Session) Login(username string, email string, password string) error {
 	s.state = NewState()
 	digest := sha256.Sum256([]byte(password))
 
-	loginResult, err := s.ddp.CallMethod("login", ddpLoginRequest{
-		User:     ddpUser{Email: email, Username: username},
-		Password: ddpPassword{Digest: hex.EncodeToString(digest[:]), Algorithm: "sha-256"}})
+	loginResult, err := s.ddp.Login(ddpgo.Credentials{
+		User: ddpgo.User{
+			Username: username,
+			Email: email,
+		},
+		Password: ddpgo.Password{
+			Digest: hex.EncodeToString(digest[:]),
+			Algorithm: "sha-256",
+		},
+	})
+
+	if err != nil {
+		return err
+	}
 
 	jsonString, err := json.Marshal(loginResult)
 	if err != nil {
@@ -88,6 +101,7 @@ func (s *Session) SendMessage(channelId string, message string) error {
 	return err
 }
 
+// SendCustomMessage sends a customizable message using the full REST-model (which strangely also applies to realtime)
 func (s *Session) SendCustomMessage(message Message) error {
 	_, err := s.ddp.CallMethod("sendMessage", message)
 	return err
