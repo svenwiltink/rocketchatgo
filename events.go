@@ -4,12 +4,6 @@ import (
 	"errors"
 )
 
-const (
-	MessageCreate = "messageCreate"
-	ChannelJoin   = "channelJoin"
-	ChannelLeave  = "channelLeave"
-)
-
 type Event interface {
 	GetType() string
 }
@@ -30,13 +24,13 @@ type MessageCreateEvent struct {
 }
 
 func (*MessageCreateEvent) GetType() string {
-	return MessageCreate
+	return EventMessageCreate
 }
 
 type MessageCreateEventHandler func(session *Session, event *MessageCreateEvent)
 
 func (eh MessageCreateEventHandler) Type() string {
-	return MessageCreate
+	return EventMessageCreate
 }
 
 func (eh MessageCreateEventHandler) Handle(s *Session, i interface{}) {
@@ -50,13 +44,13 @@ type ChannelJoinEvent struct {
 }
 
 func (*ChannelJoinEvent) GetType() string {
-	return ChannelJoin
+	return EventChannelJoin
 }
 
 type ChannelJoinEventHandler func(session *Session, event *ChannelJoinEvent)
 
 func (eh ChannelJoinEventHandler) Type() string {
-	return ChannelJoin
+	return EventChannelJoin
 }
 
 func (eh ChannelJoinEventHandler) Handle(s *Session, i interface{}) {
@@ -70,13 +64,13 @@ type ChannelLeaveEvent struct {
 }
 
 func (*ChannelLeaveEvent) GetType() string {
-	return ChannelLeave
+	return EventChannelLeave
 }
 
 type ChannelLeaveEventHandler func(session *Session, event *ChannelLeaveEvent)
 
 func (eh ChannelLeaveEventHandler) Type() string {
-	return ChannelLeave
+	return EventChannelLeave
 }
 
 func (eh ChannelLeaveEventHandler) Handle(s *Session, i interface{}) {

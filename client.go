@@ -23,6 +23,18 @@ func (s *Session) Close() {
 	s.ddp.Close()
 }
 
+// NotifyRoom notifies the room of a given event
+func (s *Session) NotifyRoom(roomID string, params ...interface{}) (err error) {
+	_, err = s.ddp.CallMethod("stream-notify-room", params...)
+	return
+}
+
+// IsTyping enables/disables the '... is typing' event for the given room and user
+func (s *Session) IsTyping(roomID, username string, flag bool) (err error) {
+	err = s.NotifyRoom(roomID+"/typing", username, flag)
+	return
+}
+
 func (s *Session) AddHandler(i interface{}) error {
 	handler, err := getHandlerFromInterface(i)
 	if err != nil {
@@ -49,8 +61,15 @@ func (s *Session) Login(username string, email string, password string) error {
 	digest := sha256.Sum256([]byte(password))
 
 	loginResult, err := s.ddp.Login(ddpgo.Credentials{
-		User:     ddpgo.User{Email: email, Username: username},
-		Password: ddpgo.Password{Digest: hex.EncodeToString(digest[:]), Algorithm: "sha-256"}})
+		User: ddpgo.User{
+			Username: username,
+			Email: email,
+		},
+		Password: ddpgo.Password{
+			Digest: hex.EncodeToString(digest[:]),
+			Algorithm: "sha-256",
+		},
+	})
 
 	if err != nil {
 		return err
@@ -74,10 +93,7 @@ func (s *Session) Login(username string, email string, password string) error {
 }
 
 func (s *Session) SendMessage(channelId string, message string) error {
-	_, err := s.ddp.CallMethod("sendMessage", struct {
-		Message   string `json:"msg"`
-		ChannelID string `json:"rid"`
-	}{
+	err := s.SendCustomMessage(Message{
 		Message:   message,
 		ChannelID: channelId,
 	})
@@ -85,13 +101,21 @@ func (s *Session) SendMessage(channelId string, message string) error {
 	return err
 }
 
+// SendCustomMessage sends a customizable message using the full REST-model (which strangely also applies to realtime)
+func (s *Session) SendCustomMessage(message Message) error {
+	_, err := s.ddp.CallMethod("sendMessage", message)
+	return err
+}
+
 func (s *Session) GetChannels() ([]*Room, error) {
-	result, err := s.ddp.CallMethod("rooms/get")
+	result, err := s.ddp.CallMethod("rooms/get", map[string]int{
+		"$date": 0,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	jsonArray, err := json.Marshal(result)
+	jsonArray, err := json.Marshal(result.(map[string]interface{})["update"])
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +155,15 @@ func (s *Session) updateChannels() {
 	s.state.SetRooms(channels...)
 }
 
+func (s *Session) SetChannels(channels []*Room) {
+	s.state.SetRooms(channels...)
+}
+
 func (s *Session) startEventListener() {
+	if len(s.state.channelMap) == 0 {
+		panic("THIS WILL SEGFAULT, MAKE SURE THE BOT IS IN SOME CHANNELS!")
+	}
+
 	for _, room := range s.state.channelMap {
 		_, err := s.ddp.Subscribe("stream-room-messages", room.ID, true)
 		if err != nil {
