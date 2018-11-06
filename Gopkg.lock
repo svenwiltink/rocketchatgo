@@ -2,24 +2,20 @@
 
 
 [[projects]]
-  digest = "1:43dd08a10854b2056e615d1b1d22ac94559d822e1f8b6fcc92c1a1057e85188e"
   name = "github.com/gorilla/websocket"
   packages = ["."]
-  pruneopts = "UT"
-  revision = "ea4d1f681babbce9545c9c5f3d5194a789c89f5b"
-  version = "v1.2.0"
+  revision = "3ff3320c2a1756a3691521efc290b4701575147c"
+  version = "v1.3.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:89ee898518d8a5679d6ad7131a663392c77b877971db3e9c2f6b667f04fae56d"
   name = "github.com/svenwiltink/ddpgo"
   packages = ["."]
-  pruneopts = "UT"
-  revision = "d9238bf818c01afc51af660dc281781b18da3bc8"
+  revision = "e1c7b8aa7b89452dddf1ee40b061b33967fc82d9"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = ["github.com/svenwiltink/ddpgo"]
+  inputs-digest = "45f540bcf6545af2d36da18bf7190d7fee64a2236cb988cf7a86507381706548"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -20,7 +20,7 @@ type Session struct {
 }
 
 func (s *Session) Close() {
-	//s.ddp.Close()
+	s.ddp.Close()
 }
 
 // NotifyRoom notifies the room of a given event

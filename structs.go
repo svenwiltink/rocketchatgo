@@ -5,21 +5,6 @@ import (
 	"time"
 )
 
-type ddpLoginRequest struct {
-	User     ddpUser     `json:"user"`
-	Password ddpPassword `json:"password"`
-}
-
-type ddpUser struct {
-	Email    string `json:"email,omitempty"`
-	Username string `json:"username,omitempty"`
-}
-
-type ddpPassword struct {
-	Digest    string `json:"digest"`
-	Algorithm string `json:"algorithm"`
-}
-
 type ddpLoginResponse struct {
 	ID string `json:"id"`
 }
@@ -64,6 +49,7 @@ type Message struct {
 	Avatar      string       `json:"avatar,omitempty"`
 	Attachments []Attachment `json:"attachments,omitempty"`
 	Emoji       string       `json:"emoji,omitempty"`
+	Mentions    []*User      `json:"mentions,omitempty"`
 }
 
 type Attachment struct {
